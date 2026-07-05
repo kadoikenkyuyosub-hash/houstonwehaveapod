@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>HWHAP Shadowing Console</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="HWHAP" />
+<meta name="theme-color" content="#0A0F1E" />
+<link rel="manifest" href='data:application/manifest+json,{"name":"HWHAP Shadowing Console","short_name":"HWHAP","display":"standalone","background_color":"%230A0F1E","theme_color":"%230A0F1E","start_url":"."}' />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0A0F1E; --surface:#141B30; --surface2:#1B2340;
+    --line:rgba(147,168,220,.16); --text:#E9EDF7; --dim:#8B96B5;
+    --amber:#FFB454; --blue:#7FB0FF; --green:#5EE0A0; --red:#FF7B72;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+  html,body{background:var(--bg);color:var(--text);
+    font-family:'Space Grotesk','Noto Sans JP',system-ui,sans-serif}
+  body{min-height:100vh;padding-bottom:170px}
+  button{font-family:inherit;cursor:pointer;color:inherit;background:none;border:none}
+  button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  input,textarea{font-family:inherit}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  header{padding:calc(14px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--dim);font-weight:500}
+  .met{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--amber);font-weight:700}
+  .met span{color:var(--dim);font-weight:500}
+  h1{margin:8px 0 2px;font-size:19px;font-weight:700;line-height:1.3}
+  .sub{font-size:12px;color:var(--dim)}
+  .tabs{display:flex;gap:8px;margin-top:14px;align-items:center}
+  .tab{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;
+    border:1px solid var(--line);color:var(--dim)}
+  .tab.on{border-color:var(--amber);background:rgba(255,180,84,.12);color:var(--amber)}
+  .reset{margin-left:auto;padding:7px 10px;border-radius:999px;font-size:11px;
+    border:1px solid var(--line);color:var(--dim)}
+
+  main{padding:14px 16px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch}
+  .chip{white-space:nowrap;padding:8px 13px;border-radius:10px;font-size:13px;font-weight:600;
+    border:1px solid var(--line);background:var(--surface);color:var(--text)}
+  .chip.on{border-color:var(--amber);background:rgba(255,180,84,.1);color:var(--amber)}
+  .chip.ep{font-size:12px;padding:6px 12px;border-radius:8px;color:var(--dim)}
+  .chip.ep.on{border-color:var(--blue);background:rgba(127,176,255,.12);color:var(--blue)}
+
+  .segctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .btn-jump{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;background:var(--blue);color:#0A0F1E}
+  .btn-jump[disabled]{background:var(--surface2);color:var(--dim)}
+  .start-info{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim)}
+  .start-info.in{color:var(--green)}
+  .btn-mini{margin-left:auto;padding:7px 10px;border-radius:8px;font-size:11px;border:1px solid var(--line);color:var(--dim)}
+
+  .ja-row{display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px}
+  .hint{font-size:12px;color:var(--dim)}
+  .btn-ja{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--line);color:var(--dim)}
+  .btn-ja.on{background:var(--surface2);color:var(--text)}
+
+  .lines{display:flex;flex-direction:column;gap:10px}
+  .lc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    cursor:pointer;border-left:3px solid var(--amber);transition:background .15s}
+  .lc.host{border-left-color:var(--blue)}
+  .lc:active{background:var(--surface2)}
+  .lc .sp{font-size:10.5px;letter-spacing:.14em;color:var(--dim);margin-bottom:5px;font-weight:700}
+  .lc .en{font-size:15.5px;line-height:1.62}
+  .lc .ja{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);
+    font-size:13.5px;line-height:1.75;color:#C3CBE2;font-family:'Noto Sans JP',sans-serif}
+  .lc.open .ja{display:block}
+
+  .vh{font-size:13px;letter-spacing:.18em;color:var(--dim);margin:24px 0 10px;font-weight:700}
+  .vocab{display:flex;flex-direction:column;gap:6px}
+  .vi{display:flex;gap:12px;align-items:baseline;background:var(--surface);
+    border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+  .vi b{font-weight:700;font-size:14px;color:var(--amber);min-width:120px}
+  .vi span{font-size:13px;color:#C3CBE2;font-family:'Noto Sans JP',sans-serif}
+  .note{margin-top:22px;font-size:11.5px;color:var(--dim);line-height:1.7}
+
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;color:var(--dim);margin-bottom:5px}
+  .field input,.field textarea{width:100%;padding:11px 12px;border-radius:10px;font-size:14px;
+    background:var(--surface);border:1px solid var(--line);color:var(--text)}
+  .field textarea{font-size:13px;line-height:1.6;resize:vertical}
+  .btn-primary{width:100%;margin-top:6px;padding:14px;border-radius:12px;
+    font-size:15px;font-weight:700;background:var(--amber);color:#0A0F1E}
+  .err{margin-top:10px;font-size:13px;color:var(--red);line-height:1.6}
+  .ok{margin-top:10px;font-size:13px;color:var(--green)}
+
+  #player{position:fixed;left:0;right:0;bottom:0;background:rgba(13,18,36,.96);
+    backdrop-filter:blur(10px);border-top:1px solid var(--line);
+    padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+  .srcrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .btn-file{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;
+    border:1px solid var(--amber);color:var(--amber);white-space:nowrap}
+  .btn-file.loaded{border-color:var(--green);color:var(--green)}
+  .srcname{font-size:11.5px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .srcname.on{color:var(--green)}
+  #bar{width:100%;accent-color:var(--amber);height:4px;margin-bottom:8px}
+  .ctr{display:flex;align-items:center;justify-content:center;gap:18px}
+  .btn-rate{width:52px;height:40px;border-radius:10px;border:1px solid var(--line);
+    color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:700}
+  .btn-rate.mod{color:var(--green)}
+  .btn-back5{width:64px;height:64px;border-radius:50%;border:2px solid var(--amber);
+    background:rgba(255,180,84,.1);color:var(--amber);font-weight:700;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+  .btn-play{width:58px;height:58px;border-radius:50%;background:var(--text);color:#0A0F1E;
+    font-size:20px;font-weight:700}
+  .btn-fwd{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);
+    color:var(--dim);font-size:12px;font-weight:700}
+  .cur{width:52px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--dim)}
+  #aerr{font-size:11.5px;color:var(--red);margin-bottom:6px;display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div class="eyebrow">HWHAP · SHADOWING CONSOLE</div>
+    <div class="met">T+ <span id="metCur">00:00</span><span> / </span><span id="metDur">00:00</span></div>
+  </div>
+  <h1 id="epTitle"></h1>
+  <div class="sub">毎日3分 · 意味理解 → シャドーイング</div>
+  <div class="tabs">
+    <button class="tab on" id="tabLearn">学習</button>
+    <button class="tab" id="tabImport">＋ インポート</button>
+    <button class="reset" id="btnReset">初期化</button>
+  </div>
+</header>
+
+<main id="viewLearn">
+  <div class="chips" id="epChips"></div>
+  <div class="chips" id="segChips"></div>
+  <div class="segctl">
+    <button class="btn-jump" id="btnJump">▶ このセグメントから再生</button>
+    <span class="start-info" id="startInfo"></span>
+    <button class="btn-mini" id="btnSetStart">現在位置を開始に設定</button>
+  </div>
+  <div class="ja-row">
+    <div class="hint">本文をタップすると和訳が表示されます</div>
+    <button class="btn-ja" id="btnAllJa">和訳を全表示</button>
+  </div>
+  <div class="lines" id="lines"></div>
+  <div class="vh">VOCABULARY</div>
+  <div class="vocab" id="vocab"></div>
+  <div class="note">推奨手順：① 和訳を隠して1回聴く → ② スクリプトと和訳で意味を確定 → ③ セグメント先頭に戻り、⟲5を使いながらシャドーイング3周。</div>
+</main>
+
+<main id="viewImport" style="display:none">
+  <div class="hint" style="line-height:1.8;margin-bottom:16px">
+    Geminiで生成したJSONを貼り付けると、新しいエピソードとして追加されます。音声はエピソードのMP3
+    URL（NASA公式）から直接ストリーミング再生されます。URLが無い場合は下部プレイヤーの「MP3ファイルを選択」でも再生できます。
+  </div>
+  <div class="field">
+    <label>GeminiのJSON出力を貼り付け</label>
+    <textarea id="jsonIn" rows="12" placeholder='{"episodeTitle":"Ep.414 — Science in Space","audioUrl":"https://www.nasa.gov/.../ep414.mp3","segments":[...]}'></textarea>
+  </div>
+  <button class="btn-primary" id="btnImport">エピソードを追加</button>
+  <div class="err" id="impErr" style="display:none"></div>
+  <div class="ok" id="impOk" style="display:none"></div>
+  <div class="note">
+    ヒント：追加後は「学習」タブで再生しながら「現在位置を開始に設定」で各セグメントの頭出し位置を保存できます。データはこの端末のブラウザに保存されます（他人には見えません）。
+  </div>
+</main>
+
+<div id="player">
+  <div class="srcrow">
+    <input type="file" id="filePick" accept="audio/*,.mp3,.m4a" style="display:none" />
+    <button class="btn-file" id="btnFile">MP3ファイルを選択</button>
+    <div class="srcname" id="srcName">エピソードのURLから再生（またはファイルを選択）</div>
+  </div>
+  <div id="aerr"></div>
+  <input type="range" id="bar" min="0" max="1" step="1" value="0" />
+  <div class="ctr">
+    <button class="btn-rate" id="btnRate">1×</button>
+    <button class="btn-back5" id="btnBack" aria-label="5秒戻る"><span style="font-size:18px">⟲</span><span style="font-size:11px">5s</span></button>
+    <button class="btn-play" id="btnPlay" aria-label="再生/一時停止">▶</button>
+    <button class="btn-fwd" id="btnFwd" aria-label="10秒進む">10s ⟳</button>
+    <div class="cur" id="curLbl">00:00</div>
+  </div>
+  <audio id="audio" preload="metadata"></audio>
+</div>
+
+<script>
+"use strict";
+// ================= sample data (Ep.304) =================
+const SAMPLE = {episodes:[{
+  id:"ep304",
+  title:"Ep.304 — Houston, We Have an Astronaut",
+  audioUrl:"https://www.nasa.gov/wp-content/uploads/2023/09/ep304_houston_we_have_an_astronaut.mp3",
+  segments:[
+    {id:"s1",title:"01 · オープニング（番組紹介）",start:0,approx:false,
+     lines:[
+      {sp:"Host",en:"Houston, we have a podcast! Welcome to the official podcast of the NASA Johnson Space Center, Episode 304 “Houston, We Have an Astronaut.” I’m Gary Jordan, and I’ll be your host today. On this podcast, we bring in the experts, scientists, engineers, astronauts, all to let you know what’s going on in the world of human spaceflight.",
+       ja:"ヒューストン、ポッドキャストを開始します！NASAジョンソン宇宙センター公式ポッドキャスト、エピソード304「Houston, We Have an Astronaut」へようこそ。ホストのゲイリー・ジョーダンです。この番組では、専門家、科学者、エンジニア、宇宙飛行士を招き、有人宇宙飛行の世界で今何が起きているのかをお届けします。"},
+      {sp:"Host",en:"Loral O’Hara was selected by NASA as an astronaut candidate in 2017. As a researcher exploring some of the most extreme and remote environments on planet Earth and now a NASA astronaut, Loral is looking forward to her very first mission on the International Space Station.",
+       ja:"ローラル・オハラは2017年、NASAの宇宙飛行士候補生に選抜されました。地球上で最も過酷で人里離れた環境を探査してきた研究者であり、現在はNASA宇宙飛行士である彼女は、国際宇宙ステーションでの初ミッションを心待ちにしています。"},
+      {sp:"Host",en:"Born right here in Houston, Texas, O’Hara graduated from Clements High School in Sugarland, Texas in 2001. She earned a Bachelor of Science degree in aerospace engineering from the University of Kansas, and a Master of Science degree in aeronautics and astronautics from Purdue University in 2009.",
+       ja:"ここテキサス州ヒューストン生まれのオハラは、2001年にシュガーランドのクレメンツ高校を卒業。カンザス大学で航空宇宙工学の学士号を、2009年にパデュー大学で航空宇宙学の修士号を取得しました。"},
+      {sp:"Host",en:"Prior to joining NASA, her work focused on the engineering and operations of deep ocean research, scientific submersibles and robots. At the time of her selection in June 2017, O’Hara was a research engineer at Woods Hole Oceanographic Institution.",
+       ja:"NASA入局以前は、深海研究や科学調査用の潜水艇・ロボットの設計・運用に携わっていました。2017年6月の選抜当時は、ウッズホール海洋研究所の研究エンジニアでした。"},
+      {sp:"Host",en:"O’Hara is set to fly on the Soyuz MS-24 mission to the International Space Station. She’s scheduled to launch in September 2023. Now that’s just skimming the surface. Let’s dive even deeper into the ocean that is the life of NASA astronaut, Loral O’Hara. Enjoy.",
+       ja:"オハラはソユーズMS-24ミッションで国際宇宙ステーションへ向かう予定で、打ち上げは2023年9月。さて、ここまでは表面をなぞっただけ。NASA宇宙飛行士ローラル・オハラの人生という「海」へ、さらに深く潜っていきましょう。どうぞ。"}],
+     vocab:[
+      {term:"astronaut candidate",meaning:"宇宙飛行士候補生（略称 ASCAN）"},
+      {term:"be selected as 〜",meaning:"〜に選抜される"},
+      {term:"submersible",meaning:"潜水艇（有人・調査用）"},
+      {term:"skim the surface",meaning:"表面をなぞる、うわべだけ触れる"},
+      {term:"dive deeper into 〜",meaning:"〜をさらに深く掘り下げる（海洋研究者の経歴と掛けた表現）"}]},
+    {id:"s2",title:"02 · 生い立ち：裏庭にNASAがあった",start:185,approx:true,
+     lines:[
+      {sp:"Host",en:"Loral O’Hara, thank you so much for coming on Houston We Have a Podcast.",ja:"ローラル・オハラさん、番組にお越しいただき本当にありがとうございます。"},
+      {sp:"Loral",en:"Thank you for having me.",ja:"お招きいただきありがとうございます。"},
+      {sp:"Host",en:"Hey, very exciting. You’re going to be launching to the International Space Station soon and being there for quite some time. I think what’s exciting about your background is you’ve had exposure to space for quite some time and it’s just sort of been in your backyard and now it’s happening. What was it like growing up and just being around this area?",
+       ja:"いやあ、楽しみですね。もうすぐ国際宇宙ステーションへ打ち上げられて、かなりの期間滞在するわけですから。あなたの経歴で面白いのは、宇宙がずっと身近にあったこと。まさに「裏庭」にあったものが、今まさに現実になろうとしている。ここヒューストンで育つというのは、どんな感じでしたか？"},
+      {sp:"Loral",en:"Yeah, it was awesome, and I think that’s a large part of why I’m here today. My earliest memory of going to NASA—I mean we would come down to Johnson Space Center for field trips and just with my family all the time—but in second grade I had the opportunity to grow tomato seeds that had flown on Space Shuttle as part of a school project.",
+       ja:"最高でしたね。今日この場にいる理由の大部分はそれだと思います。NASAの一番古い記憶は——家族や学校の遠足でしょっちゅうジョンソン宇宙センターに来ていたんですが——小学2年生のとき、学校のプロジェクトで、スペースシャトルに搭載されたトマトの種を育てる機会があったことです。"},
+      {sp:"Loral",en:"And then I also got to do things like come down to Johnson Space Center for the Space Shuttle debriefs, so my dad would bring me down here to Space Center Houston when the crews would go over there and show pictures and talk about their missions. So that was super awesome, too.",
+       ja:"それから、スペースシャトルの帰還報告会にも来ました。クルーが写真を見せてミッションについて語るとき、父がここスペースセンター・ヒューストンに連れてきてくれたんです。あれも本当に最高でした。"},
+      {sp:"Host",en:"Awesome.",ja:"いいですね。"},
+      {sp:"Loral",en:"Yeah. I remember meeting Eileen Collins after one of her flights and so those were all really kind of inspirational moments.",
+       ja:"ええ。アイリーン・コリンズ飛行士に飛行後お会いしたのを覚えています。どれも本当に刺激を受けた瞬間でした。"},
+      {sp:"Host",en:"Inspirational, formative… Did you have that in your mind as you were going to college, it was maybe in the back of your mind like, “maybe I’ll end up at NASA one day?”",
+       ja:"刺激的で、人格形成にも影響した、と。大学に進むとき、「いつかNASAに行き着くかも」という思いは頭の片隅にあったんですか？"},
+      {sp:"Loral",en:"Oh yeah. No, I think my parents say that the first time, you know, I started talking about being an astronaut when I was pretty young.",
+       ja:"もちろん。両親いわく、宇宙飛行士になりたいと言い出したのは、かなり小さい頃だったそうです。"},
+      {sp:"Host",en:"Really?",ja:"本当に？"},
+      {sp:"Loral",en:"Like first grade, second grade. I wanted to be like everything when I was younger, but astronaut kind of was at the top of the list all the way growing up.",
+       ja:"小1か小2くらいです。子どもの頃は何にでもなりたかったけれど、宇宙飛行士はずっとリストの一番上でした。"}],
+     vocab:[
+      {term:"exposure to 〜",meaning:"〜に触れる機会・経験"},
+      {term:"debrief",meaning:"（任務後の）報告会、振り返り"},
+      {term:"formative",meaning:"人格形成期の、形成に影響する"},
+      {term:"in the back of one’s mind",meaning:"頭の片隅に"},
+      {term:"end up at 〜",meaning:"最終的に〜に行き着く"},
+      {term:"top of the list",meaning:"最優先、一番の願望"}]},
+    {id:"s3",title:"03 · 英国の森と17歳の操縦免許",start:370,approx:true,
+     lines:[
+      {sp:"Host",en:"Houston though, I want to kind of lean on that just a little bit more. When we talk about Houston, we talk about the NASA Johnson Space Center, obviously, but there’s more to it. What was life growing up here? What was childhood like?",
+       ja:"ヒューストンについて、もう少しだけ掘り下げたいんです。ヒューストンといえば当然NASAジョンソン宇宙センターですが、それだけではない。ここでの暮らしはどうでしたか？子ども時代は？"},
+      {sp:"Loral",en:"My family lived in Missouri City when I was born and we lived there until I was around seven, and then moved to England for three years. So we lived overseas for those three years, which was kind of a glorious time in my childhood cause we lived out in the country and our house just backed up into woods.",
+       ja:"生まれたときはミズーリシティに住んでいて、7歳頃までそこにいました。その後3年間イングランドへ。海外で過ごしたあの3年は子ども時代の輝かしい時期で、田舎に住んでいて、家のすぐ裏が森だったんです。"},
+      {sp:"Loral",en:"So I spent a lot of time just kind of exploring—we had a lot of freedom there to explore the woods and go on hikes and my family took a lot of trips. We got to travel around Europe and England, Scotland and Ireland and places like that. That was like a pretty early experience that I think gave me a bit of wanderlust for the rest of my life.",
+       ja:"だから探検ばかりしていました。森を探検したりハイキングに行ったりする自由がたくさんあって、家族旅行も多かった。ヨーロッパ各地、イングランド、スコットランド、アイルランドなどを旅しました。あの幼い頃の経験が、その後の人生の「旅への渇望」を植え付けたんだと思います。"},
+      {sp:"Loral",en:"But then we moved back, and we moved back to Sugarland, and that’s where I went to middle school and high school. It was a pretty typical suburban youth, like I played soccer, I ran cross country and track. I did a lot of art.",
+       ja:"その後シュガーランドに戻り、中学・高校はそこで過ごしました。ごく普通の郊外の青春です。サッカーをやって、クロスカントリーと陸上をやって、美術もたくさんやりました。"},
+      {sp:"Loral",en:"So like in high school for my 16th birthday, my parents got me an introductory flying lesson. So I started taking flying lessons in high school and got my private pilot’s license when I was 17.",
+       ja:"高校時代、16歳の誕生日に両親が体験フライトレッスンをプレゼントしてくれたんです。そこから飛行訓練を始めて、17歳で自家用操縦士免許を取りました。"},
+      {sp:"Loral",en:"And so that kind of became my means of exploration in high school because I wasn’t allowed to drive. I could only drive to school or work, but I could go get an airplane and like fly down the coast somehow.",
+       ja:"それが高校時代の私の「探検手段」になりました。車は学校と仕事にしか運転させてもらえなかったのに、なぜか飛行機なら借りて海岸沿いを飛べたんですから。"},
+      {sp:"Loral",en:"So that was a really fun combination of just like science and adventure and freedom at that age.",
+       ja:"あの年齢で、科学と冒険と自由が一つになった、本当に楽しい経験でした。"}],
+     vocab:[
+      {term:"lean on 〜 (a topic)",meaning:"（話題を）もう少し掘り下げる"},
+      {term:"back up into 〜",meaning:"（土地・家が）〜に接している"},
+      {term:"wanderlust",meaning:"旅への強い憧れ、放浪癖"},
+      {term:"suburban",meaning:"郊外の"},
+      {term:"private pilot’s license",meaning:"自家用操縦士免許"},
+      {term:"means of 〜",meaning:"〜の手段"}]}
+  ]}]};
+
+// ================= state & persistence =================
+const KEY="hwhap-shadow-pwa-v1";
+let S={data:null,epIdx:0,segIdx:0,showAllJa:false,rate:1,localName:null,tab:"learn"};
+try{
+  const raw=localStorage.getItem(KEY);
+  S.data = raw ? JSON.parse(raw) : structuredClone(SAMPLE);
+  if(!S.data.episodes || !S.data.episodes.length) S.data=structuredClone(SAMPLE);
+}catch(e){ S.data=structuredClone(SAMPLE); }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S.data)); }catch(e){ console.error(e);} }
+
+// ================= helpers =================
+const $=(id)=>document.getElementById(id);
+const fmt=(t)=>{ if(!isFinite(t))return"00:00";
+  const m=Math.floor(t/60),s=Math.floor(t%60);
+  return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0"); };
+const ep=()=>S.data.episodes[Math.min(S.epIdx,S.data.episodes.length-1)];
+const seg=()=>ep().segments[Math.min(S.segIdx,ep().segments.length-1)];
+const esc=(s)=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+// ================= audio =================
+const A=$("audio");
+let usingLocal=false;
+function setSrc(){
+  if(usingLocal) return; // ローカルファイル使用中はURLで上書きしない
+  const u=ep().audioUrl;
+  if(u){ A.src=u; A.load(); A.playbackRate=S.rate; }
+  else { A.removeAttribute("src"); }
+  $("srcName").textContent = u ? "URLから再生: "+u.split("/").pop() : "音声URL未設定 — ファイルを選択してください";
+  $("srcName").classList.remove("on");
+}
+function showAErr(msg){ const e=$("aerr"); e.textContent=msg; e.style.display=msg?"block":"none"; }
+A.addEventListener("timeupdate",()=>{ $("metCur").textContent=fmt(A.currentTime);
+  $("curLbl").textContent=fmt(A.currentTime); $("bar").value=Math.floor(A.currentTime); renderStartInfo(); });
+A.addEventListener("loadedmetadata",()=>{ $("metDur").textContent=fmt(A.duration); $("bar").max=Math.floor(A.duration)||1; });
+A.addEventListener("play",()=>{ $("btnPlay").textContent="❚❚"; });
+A.addEventListener("pause",()=>{ $("btnPlay").textContent="▶"; });
+A.addEventListener("error",()=>{ const codes={1:"読み込み中断",2:"ネットワーク",3:"デコード失敗",4:"非対応の形式/ソース"};
+  const c=A.error?A.error.code:"?";
+  showAErr("音声エラー [code "+c+": "+(codes[c]||"不明")+"]。URLを確認するか、ファイルを選択してください。"); });
+
+$("btnPlay").onclick=()=>{ showAErr("");
+  if(!A.src){ showAErr("音声がありません。「MP3ファイルを選択」から読み込んでください。"); return; }
+  if(A.paused) A.play().catch((err)=>showAErr("再生に失敗 ["+(err&&err.name)+"]。もう一度タップしてください。"));
+  else A.pause(); };
+$("btnBack").onclick=()=>{ A.currentTime=Math.max(0,A.currentTime-5); };
+$("btnFwd").onclick=()=>{ A.currentTime=A.currentTime+10; };
+$("btnRate").onclick=()=>{ S.rate = S.rate===1?0.8:S.rate===0.8?1.25:1;
+  A.playbackRate=S.rate; const b=$("btnRate"); b.textContent=S.rate+"×";
+  b.classList.toggle("mod",S.rate!==1); };
+$("bar").oninput=(e)=>{ A.currentTime=Number(e.target.value); };
+$("btnFile").onclick=()=>$("filePick").click();
+$("filePick").onchange=(e)=>{ const f=e.target.files&&e.target.files[0]; if(!f)return;
+  usingLocal=true; A.src=URL.createObjectURL(f); A.load(); A.playbackRate=S.rate;
+  showAErr(""); $("srcName").textContent="読込済: "+f.name; $("srcName").classList.add("on");
+  $("btnFile").textContent="MP3を変更"; $("btnFile").classList.add("loaded"); };
+
+// ================= learn view =================
+function renderStartInfo(){
+  const s=seg(); const el=$("startInfo");
+  if(s.start==null){ el.textContent="開始位置：未設定"; el.classList.remove("in"); return; }
+  el.textContent="開始 "+fmt(s.start)+(s.approx?"（推定）":"");
+  el.classList.toggle("in", A.currentTime>=s.start);
+}
+function renderLearn(){
+  $("epTitle").textContent=ep().title;
+  // episode chips
+  const ec=$("epChips"); ec.innerHTML=""; ec.style.display=S.data.episodes.length>1?"flex":"none";
+  S.data.episodes.forEach((e,i)=>{ const b=document.createElement("button");
+    b.className="chip ep"+(i===S.epIdx?" on":""); b.textContent=e.title;
+    b.onclick=()=>{ S.epIdx=i; S.segIdx=0; usingLocal=false;
+      $("btnFile").textContent="MP3ファイルを選択"; $("btnFile").classList.remove("loaded");
+      setSrc(); renderLearn(); };
+    ec.appendChild(b); });
+  // segment chips
+  const sc=$("segChips"); sc.innerHTML="";
+  ep().segments.forEach((s,i)=>{ const b=document.createElement("button");
+    b.className="chip"+(i===S.segIdx?" on":""); b.textContent=s.title;
+    b.onclick=()=>{ S.segIdx=i; renderLearn(); };
+    sc.appendChild(b); });
+  // seg control
+  $("btnJump").disabled = seg().start==null;
+  renderStartInfo();
+  // lines
+  const ln=$("lines"); ln.innerHTML="";
+  seg().lines.forEach((l)=>{ const d=document.createElement("div");
+    d.className="lc"+(String(l.sp).toLowerCase().includes("host")?" host":"")+(S.showAllJa?" open":"");
+    d.innerHTML='<div class="sp">'+esc(l.sp).toUpperCase()+'</div><div class="en">'+esc(l.en)+'</div><div class="ja">'+esc(l.ja||"")+'</div>';
+    d.onclick=()=>d.classList.toggle("open");
+    ln.appendChild(d); });
+  // vocab
+  const vc=$("vocab"); vc.innerHTML="";
+  (seg().vocab||[]).forEach((v)=>{ const d=document.createElement("div"); d.className="vi";
+    d.innerHTML="<b>"+esc(v.term)+"</b><span>"+esc(v.meaning)+"</span>"; vc.appendChild(d); });
+  // ja toggle
+  const bj=$("btnAllJa"); bj.textContent=S.showAllJa?"和訳を隠す":"和訳を全表示";
+  bj.classList.toggle("on",S.showAllJa);
+}
+$("btnAllJa").onclick=()=>{ S.showAllJa=!S.showAllJa; renderLearn(); };
+$("btnJump").onclick=()=>{ const s=seg(); if(s.start==null)return;
+  if(!A.src){ showAErr("音声がありません。「MP3ファイルを選択」から読み込んでください。"); return; }
+  A.currentTime=s.start; A.play().catch(()=>{}); };
+$("btnSetStart").onclick=()=>{ seg().start=Math.floor(A.currentTime); seg().approx=false; save(); renderStartInfo(); renderLearn(); };
+$("btnReset").onclick=()=>{ if(!confirm("追加したエピソードと設定をすべて消去し、サンプルに戻します。よろしいですか？"))return;
+  localStorage.removeItem(KEY); S.data=structuredClone(SAMPLE); S.epIdx=0; S.segIdx=0; setSrc(); renderLearn(); };
+
+// ================= import view =================
+function switchTab(t){ S.tab=t;
+  $("viewLearn").style.display = t==="learn"?"block":"none";
+  $("viewImport").style.display = t==="import"?"block":"none";
+  $("tabLearn").classList.toggle("on",t==="learn");
+  $("tabImport").classList.toggle("on",t==="import"); }
+$("tabLearn").onclick=()=>switchTab("learn");
+$("tabImport").onclick=()=>switchTab("import");
+
+$("btnImport").onclick=()=>{
+  const errEl=$("impErr"), okEl=$("impOk");
+  errEl.style.display="none"; okEl.style.display="none";
+  try{
+    const txt=$("jsonIn").value.replace(/```json|```/g,"").trim();
+    if(!txt) throw new Error("JSONを貼り付けてください。");
+    const j=JSON.parse(txt);
+    if(!j.segments || !Array.isArray(j.segments) || !j.segments.length)
+      throw new Error("segments 配列が見つかりません。Geminiの出力形式を確認してください。");
+    j.segments.forEach((s,i)=>{
+      if(!s.lines || !Array.isArray(s.lines) || !s.lines.length)
+        throw new Error("セグメント"+(i+1)+"に lines がありません。");
+      s.id="s"+Date.now()+"_"+i;
+      if(s.start===undefined) s.start=null;
+      s.approx = s.start!=null;
+      if(!s.vocab) s.vocab=[];
+    });
+    S.data.episodes.push({
+      id:"ep"+Date.now(),
+      title: j.episodeTitle || "新規エピソード",
+      audioUrl: j.audioUrl || "",
+      segments: j.segments
+    });
+    save();
+    S.epIdx=S.data.episodes.length-1; S.segIdx=0; usingLocal=false;
+    $("btnFile").textContent="MP3ファイルを選択"; $("btnFile").classList.remove("loaded");
+    setSrc(); renderLearn();
+    $("jsonIn").value="";
+    okEl.textContent="「"+(j.episodeTitle||"新規エピソード")+"」を追加しました（セグメント "+j.segments.length+" 件）。学習タブに切り替えます。";
+    okEl.style.display="block";
+    setTimeout(()=>switchTab("learn"),900);
+  }catch(e){
+    errEl.textContent="インポート失敗: "+(e.message||String(e));
+    errEl.style.display="block";
+  }
+};
+
+// ================= init =================
+setSrc();
+renderLearn();
+</script>
+</body>
+</html>
