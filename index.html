@@ -65,7 +65,11 @@
     cursor:pointer;border-left:3px solid var(--amber);transition:background .15s}
   .lc.host{border-left-color:var(--blue)}
   .lc:active{background:var(--surface2)}
-  .lc .sp{font-size:10.5px;letter-spacing:.14em;color:var(--dim);margin-bottom:5px;font-weight:700}
+  .lc .sp{font-size:10.5px;letter-spacing:.14em;color:var(--dim);font-weight:700}
+  .sp-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+  .lplay{padding:4px 10px;border-radius:7px;font-size:11px;font-weight:700;
+    border:1px solid var(--line);color:var(--blue)}
+  .lplay.off{color:var(--dim);opacity:.5}
   .lc .en{font-size:15.5px;line-height:1.62}
   .lc .ja{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);
     font-size:13.5px;line-height:1.75;color:#C3CBE2;font-family:'Noto Sans JP',sans-serif}
@@ -324,6 +328,33 @@ function renderStartInfo(){
   el.textContent="開始 "+fmt(s.start)+(s.approx?"（推定）":"");
   el.classList.toggle("in", A.currentTime>=s.start);
 }
+// 行の推定タイムスタンプ計算：セグメント開始時刻＋語数按分（発話速度 約2.5語/秒）
+const WPS = 2.5;
+function lineWords(l){ return String(l.en).trim().split(/\s+/).length; }
+function estLineTime(lineIdx){
+  const s = seg();
+  if (s.start == null) return null;
+  if (s.lines[lineIdx] && s.lines[lineIdx].t != null) return s.lines[lineIdx].t; // 手動記録があれば優先
+  const total = s.lines.reduce((a,l)=>a+lineWords(l),0);
+  const before = s.lines.slice(0,lineIdx).reduce((a,l)=>a+lineWords(l),0);
+  // 次セグメントの開始時刻が設定済みなら、その区間内で語数比により按分（より正確）
+  const next = ep().segments[S.segIdx+1];
+  if (next && next.start != null && next.start > s.start) {
+    return s.start + (next.start - s.start) * (before/total);
+  }
+  return s.start + before / WPS; // 次が未設定なら発話速度で推定
+}
+function jumpToLine(lineIdx){
+  const t = estLineTime(lineIdx);
+  if (t == null) {
+    showAErr("先にこのセグメントの開始位置を設定してください（再生しながら「現在位置を開始に設定」）。");
+    return;
+  }
+  if (!A.src) { showAErr("音声がありません。「MP3ファイルを選択」から読み込んでください。"); return; }
+  showAErr("");
+  A.currentTime = Math.max(0, t);
+  A.play().catch(()=>{});
+}
 function renderLearn(){
   $("epTitle").textContent=ep().title;
   // episode chips
@@ -345,10 +376,14 @@ function renderLearn(){
   renderStartInfo();
   // lines
   const ln=$("lines"); ln.innerHTML="";
-  seg().lines.forEach((l)=>{ const d=document.createElement("div");
+  const canJump = seg().start != null;
+  seg().lines.forEach((l,li)=>{ const d=document.createElement("div");
     d.className="lc"+(String(l.sp).toLowerCase().includes("host")?" host":"")+(S.showAllJa?" open":"");
-    d.innerHTML='<div class="sp">'+esc(l.sp).toUpperCase()+'</div><div class="en">'+esc(l.en)+'</div><div class="ja">'+esc(l.ja||"")+'</div>';
+    d.innerHTML='<div class="sp-row"><span class="sp">'+esc(l.sp).toUpperCase()+'</span>'
+      +'<button class="lplay'+(canJump?"":" off")+'" aria-label="この行から再生">▶ ここから</button></div>'
+      +'<div class="en">'+esc(l.en)+'</div><div class="ja">'+esc(l.ja||"")+'</div>';
     d.onclick=()=>d.classList.toggle("open");
+    d.querySelector(".lplay").onclick=(ev)=>{ ev.stopPropagation(); jumpToLine(li); };
     ln.appendChild(d); });
   // vocab
   const vc=$("vocab"); vc.innerHTML="";
